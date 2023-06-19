@@ -19,6 +19,10 @@ class MainViewController: UIViewController {
         return tableView
     }()
     
+    var presenter: MainPresenter?
+    
+    private var personArray = [Person]()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -28,6 +32,8 @@ class MainViewController: UIViewController {
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add,
                                                             target: self,
                                                             action: #selector(addButtonTapped))
+        
+//        presenter = MainPresenter(view: self)
     }
     
     private func setupViews() {
@@ -41,7 +47,31 @@ class MainViewController: UIViewController {
     }
 
     @objc private func addButtonTapped() {
-        print("add")
+        let alert = UIAlertController(title: "Add person", message: nil, preferredStyle: .alert)
+        let cancel = UIAlertAction(title: "Cancel", style: .destructive)
+        
+        let add = UIAlertAction(title: "Add", style: .default) { _ in
+            if let text = alert.textFields?.first?.text {
+                self.presenter?.addPerson(firstName: text)
+            }
+        }
+        alert.addTextField()
+        alert.addAction(cancel)
+        alert.addAction(add)
+        
+        present(alert, animated: true)
+    }
+}
+
+extension MainViewController: MainViewProtocol {
+    func addPerson(person: Person) {
+        personArray.append(person)
+        tableView.reloadData()
+    }
+    
+    func deletePerson(index: Int) {
+        personArray.remove(at: index)
+        tableView.reloadData()
     }
 }
 
@@ -49,11 +79,12 @@ class MainViewController: UIViewController {
 
 extension MainViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        10
+        personArray.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        cell.textLabel?.text = personArray[indexPath.row].firstName
         return cell
     }
 }
@@ -64,7 +95,7 @@ extension MainViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let action = UIContextualAction(style: .destructive, title: "Delete") { _, _, _ in
-            print("delete")
+            self.presenter?.deletePerson(index: indexPath.row)
         }
         return UISwipeActionsConfiguration(actions: [action])
     }
